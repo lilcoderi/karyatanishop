@@ -86,22 +86,23 @@
           </div>
 
           <!-- Admin -->
-          <div class="dropdown no-arrow">
-            <a type="button" class="dropdown-toggle mt-1" data-toggle="dropdown">
-              <i class="bi bi-person-gear fa-lg nav-icon"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-right no-arrow">
-              <router-link to="/admin" class="dropdown-item">
-                <i class="bi bi-person-gear fa-lg fa-fw mr-2 text-gray-600"></i>
-                Admin
-              </router-link>
-              <div class="dropdown-divider"></div>
-              <router-link to="/kasir-view" class="dropdown-item">
-                <i class="bi bi-person-lines-fill fa-lg fa-fw mr-2 text-gray-600"></i>
-                Kasir
-              </router-link>
-            </div>
-          </div>
+<div class="dropdown no-arrow" v-if="showAdminIcon">
+  <a type="button" class="dropdown-toggle mt-1" data-toggle="dropdown">
+    <i class="bi bi-person-gear fa-lg nav-icon"></i>
+  </a>
+  <div class="dropdown-menu dropdown-menu-right no-arrow">
+    <router-link to="/admin" class="dropdown-item">
+      <i class="bi bi-person-gear fa-lg fa-fw mr-2 text-gray-600"></i>
+      Admin
+    </router-link>
+    <div class="dropdown-divider"></div>
+    <router-link to="/kasir-view" class="dropdown-item">
+      <i class="bi bi-person-lines-fill fa-lg fa-fw mr-2 text-gray-600"></i>
+      Kasir
+    </router-link>
+  </div>
+</div>
+
         </div>
       </div>
     </div>
@@ -146,6 +147,7 @@ export default {
       notifications: [],
       message: null,
       messageClass: "",
+      showAdminIcon: false,
     };
   },
   methods: {
@@ -299,13 +301,26 @@ export default {
         });
     },
   },
-  mounted() {
-    const token = localStorage.getItem("token");
-    this.isLoggedIn = !!token; // true jika token ada, false jika tidak
+ async mounted() {
+  const token = localStorage.getItem("token");
+  this.isLoggedIn = !!token; // true jika token ada
 
-    this.fetchCartItemCount();
-    this.fetchNotifications();
+  if (this.isLoggedIn) {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const profileData = response.data;
+      this.showAdminIcon = profileData.show_admin_icon; // Ambil data dari API
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
   }
+
+  this.fetchCartItemCount();
+  this.fetchNotifications();
+}
+
 };
 </script>
 

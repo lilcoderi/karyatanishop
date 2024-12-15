@@ -4,10 +4,22 @@
       <h4>Order List</h4>
     </div>
     <div class="card shadow mb-4">
-      <div class="card-header py-3">
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="table-order m-0 font-weight-bold text-success">
           Table Order
         </h6>
+        <!-- Input dan tombol untuk pencarian -->
+        <div class="input-group" style="max-width: 400px;">
+          <input
+            type="text"
+            class="form-control"
+            v-model="searchQuery"
+            placeholder="Search by Order ID"
+          />
+          <button class="btn btn-success" @click="searchOrders">
+            Search
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -32,7 +44,6 @@
                 <td class="text-truncate" style="max-width: 150px">
                   {{ order.user ? order.user.nama : "Nama tidak ditemukan" }}
                 </td>
-
                 <td class="text-truncate" style="max-width: 150px">
                   {{
                     order.user && order.user.email
@@ -40,7 +51,6 @@
                       : "Email tidak ditemukan"
                   }}
                 </td>
-
                 <td style="max-width: 150px">
                   <span
                     v-for="(item, index) in order.produk_items"
@@ -127,6 +137,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from "axios";

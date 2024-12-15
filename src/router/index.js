@@ -73,10 +73,17 @@ const routes = [
     component: () => import('@/views/customer/OrderMenu.vue')
   },
   {
-    path: '/add-review/:produkId',
+    path: '/add-review',
     name: 'add-review',
     component: () => import('@/views/customer/AddReview.vue')
   },
+  {
+    path: '/edit-review',
+    name: 'EditReview',
+    component: () => import('@/views/customer/EditReview.vue')
+   
+  },
+  
   {
     path: '/order-details/:id',
     name: 'order-details',
@@ -86,6 +93,12 @@ const routes = [
     path: '/order-process',
     name: 'order-process',
     component: () => import('@/views/customer/OrderView.vue')
+  },
+  {
+    path: '/order-now/:productId',
+    name: 'order-now',
+    component: () => import('@/views/customer/OrderNow.vue'),
+    props: true,
   },
   {
     path: '/order-payment/:orderId',
@@ -365,7 +378,8 @@ const routes = [
         alias: '/order-view', // Path alternatif
         name: 'order-view',
         component: () => import('@/views/admin/order/OrderView.vue')
-      }
+      },
+      
       
     ]
   },

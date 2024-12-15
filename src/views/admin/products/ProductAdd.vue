@@ -226,7 +226,7 @@ export default {
         })
         .then(() => {
           alert("Product added successfully!");
-          this.$router.push("/products");
+          this.$router.push("/product-view");
         })
         .catch((error) => {
           console.error("Error adding product:", error);

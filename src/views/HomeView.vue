@@ -32,12 +32,19 @@
         </div>
 
         <!-- Daftar produk -->
-        <div v-else class="row row-cols-2 row-cols-md-5 g-4 text-left">
-          <div v-for="product in products.slice(0, 10)" :key="product.produk_id" class="col">
-            <!-- Tambahkan @click untuk navigasi -->
-            <ProductCardCustomer :product="product" @click="goToProductDetail(product.produk_id)" />
-          </div>
-        </div>
+<div v-else class="row row-cols-2 row-cols-md-5 g-4 text-left">
+  <div 
+    v-for="product in products.filter(product => product.stok > 0).slice(0, 10)" 
+    :key="product.produk_id" 
+    class="col">
+    <!-- Tambahkan @click untuk navigasi -->
+    <ProductCardCustomer 
+      :product="product" 
+      @click="goToProductDetail(product.produk_id)" 
+    />
+  </div>
+</div>
+
       </div>
     </div>
 

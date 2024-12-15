@@ -104,7 +104,13 @@ export default {
   },
   computed: {
     totalPrice() {
-      return this.cartItems.reduce((total, item) => total + parseFloat(item.subtotal), 0);
+      return this.selectedItems.reduce((total, selectedItemId) => {
+        const selectedItem = this.cartItems.find(item => item.item_keranjang_offline_id === selectedItemId);
+        if (selectedItem) {
+          return total + parseFloat(selectedItem.subtotal);
+        }
+        return total;
+      }, 0);
     },
   },
   watch: {
@@ -189,44 +195,52 @@ export default {
       return `http://127.0.0.1:8000/${imagePath}`;
     },
     async checkoutSelectedItems() {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          this.error = "Anda harus login terlebih dahulu.";
-          return;
-        }
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      this.error = "Anda harus login terlebih dahulu.";
+      return;
+    }
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/post-nota",
-          { item_keranjang_offline_id: this.selectedItems },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const itemNotaIds = response.data?.item_nota_belanja_ids;
-
-        if (Array.isArray(itemNotaIds) && itemNotaIds.length > 0) {
-          this.notaId = itemNotaIds[0];
-        } else {
-          throw new Error("Nota ID tidak tersedia dalam respons.");
-        }
-
-        alert("Checkout berhasil! Nota telah dibuat.");
-        this.selectedItems = [];
-        this.fetchCartItems();
-
-        if (this.notaId) {
-          window.open(`/print-nota/${this.notaId}`, "_blank");
-        }
-      } catch (err) {
-        this.error =
-          err.response?.data?.error || err.message || "Checkout gagal.";
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/post-nota",
+      { item_keranjang_offline_id: this.selectedItems },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    },
+    );
+
+    // Periksa respons yang diterima
+    console.log("Response from post-nota:", response.data);
+
+    if (response.data.message === 'Checkout berhasil' && response.data.nota_belanja) {
+      const nota = response.data.nota_belanja; // Mengakses objek nota_belanja dari respons
+      if (nota && nota.nota_belanja_id) {
+        this.notaId = nota.nota_belanja_id;
+      } else {
+        throw new Error("Nota ID tidak ditemukan.");
+      }
+    } else {
+      throw new Error("Data nota tidak valid.");
+    }
+
+    alert("Checkout berhasil! Nota telah dibuat.");
+    this.selectedItems = [];
+    this.fetchCartItems();
+
+    if (this.notaId) {
+      window.open(`/print-nota/${this.notaId}`, "_blank");
+    }
+  } catch (err) {
+    this.error =
+      err.response?.data?.error || err.message || "Checkout gagal.";
+  }
+},
+
   },
+
   mounted() {
     this.fetchCartItems();
   },
@@ -234,7 +248,7 @@ export default {
 </script>
 
 <style scoped>
-.container{
+.container {
   font-family: "Nunito";
 }
 .text-second {

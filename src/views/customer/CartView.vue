@@ -88,14 +88,8 @@
                 Subtotal ({{ selectedItems.length }} items)
                 <span>{{ formatPrice(totalPrice) }}</span>
               </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Discount
-                <span>- {{ formatPrice(discount) }}</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Delivery
-                <span>{{ formatPrice(deliveryFee) }}</span>
-              </li>
+              
+             
               <li class="list-group-item d-flex justify-content-between align-items-center font-weight-bold">
                 Estimated total
                 <span>{{ formatPrice(estimatedTotal) }}</span>
@@ -128,7 +122,7 @@ export default {
       loading: true,
       error: null,
       discount: 0, // Diskon total
-      deliveryFee: 12000, // Biaya pengiriman
+      deliveryFee: 0, // Biaya pengiriman
     };
   },
   computed: {

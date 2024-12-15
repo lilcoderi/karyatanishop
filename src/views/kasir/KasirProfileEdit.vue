@@ -1,5 +1,22 @@
 <template>
   <NavbarKasir :cartItemCount="cartItemCount" />
+  <div
+      v-if="errorMessage"
+      class="alert alert-danger alert-dismissible fade show mt-5"
+      role="alert"
+    >
+      {{ errorMessage }}
+      <button
+        type="button"
+        class="close"
+        data-dismiss="alert"
+        aria-label="Close"
+        @click="dismissError"
+      >
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+
   <div class="profile-edit">
     <h1 class="mb-4">Edit Profile</h1>
     <form @submit.prevent="updateProfile">
@@ -36,6 +53,7 @@
           @change="handleFileUpload"
         />
         <small class="form-text text-muted">Max file size 2MB</small>
+        <img v-if="imagePreview" :src="imagePreview" alt="Image Preview" class="mt-3 img-thumbnail" width="150" />
       </div>
 
       <div class="d-flex justify-content-end">
@@ -62,13 +80,15 @@ export default {
   data() {
     return {
       user: {
-        nama: "",
-        no_tlp: "",
+        nama: '',
+        no_tlp: '',
         foto: null,
       },
       message: null,
       messageClass: "",
+      errorMessage: "",
       selectedFile: null,
+      imagePreview: null, 
     };
   },
   created() {
@@ -77,77 +97,87 @@ export default {
   methods: {
     async fetchUserProfile() {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         if (!token) {
-          this.message = "You are not authenticated. Please log in.";
-          this.messageClass = "error";
-          this.$router.push("/login");
+          this.message = 'You are not authenticated. Please log in.';
+          this.messageClass = 'error';
+          this.$router.push('/login');
           return;
         }
 
-        const response = await axios.get("http://127.0.0.1:8000/api/profile", {
+        const response = await axios.get('http://127.0.0.1:8000/api/profile', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.status === 200) {
-          this.user = response.data;
+          this.user = response.data; 
+          if (this.user.foto) {
+            this.imagePreview = `http://127.0.0.1:8000/${this.user.foto}`; 
+          }
         }
       } catch (error) {
+        // Tangani error dari API
         console.error("Error fetching user profile:", error);
-        this.message = "An error occurred while fetching user data.";
-        this.messageClass = "error";
+        this.errorMessage =
+          error.response?.data?.message ||
+          "An error occurred while fetching user data.";
       }
     },
 
     handleFileUpload(event) {
       this.selectedFile = event.target.files[0];
-      console.log(this.selectedFile);
+      if (this.selectedFile) {
+        this.imagePreview = URL.createObjectURL(this.selectedFile);
+      }
     },
 
     async updateProfile() {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          this.message = "You are not authenticated. Please log in.";
-          this.messageClass = "error";
-          this.$router.push("/login");
-          return;
-        }
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.message = "You are not authenticated. Please log in.";
+      this.messageClass = "error";
+      this.$router.push("/login");
+      return;
+    }
 
-        const formData = new FormData();
-        formData.append("_method", "PUT"); // Override method to PUT
-        formData.append("nama", this.user.nama || "");
-        formData.append("no_tlp", this.user.no_tlp || "");
-        if (this.selectedFile) {
-          formData.append("foto", this.selectedFile);
-        }
+    const formData = new FormData();
+    formData.append('_method', 'PUT'); // Menambahkan _method dengan nilai PUT
+    formData.append('nama', this.user.nama || '');
+    formData.append('no_tlp', this.user.no_tlp || '');
+    if (this.selectedFile) {
+      formData.append('foto', this.selectedFile);
+    }
 
-        console.log("Submitting FormData:", Array.from(formData.entries()));
-
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/profile", // POST request
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          this.message = "Profile updated successfully!";
-          this.messageClass = "success";
-          this.$router.push("/profile-kasir");
-        }
-      } catch (error) {
-        console.error("Error updating profile:", error);
-        this.message = error.response?.data?.message || "Failed to update profile.";
-        this.messageClass = "error";
+    const response = await axios.post( // Menggunakan POST untuk override method PUT
+      'http://127.0.0.1:8000/api/profile',
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    },
+    );
+
+    if (response.status === 200) {
+      this.message = 'Profile updated successfully!';
+      this.messageClass = 'success';
+      this.user = response.data.user;
+
+      if (this.user.foto) {
+        this.user.fotoUrl = `http://127.0.0.1:8000/${this.user.foto}`;
+      }
+
+      this.$router.push("/profile-kasir");
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    this.message = error.response?.data?.message || "Failed to update profile.";
+    this.messageClass = 'error';
+  }
+},
 
     cancel() {
       this.$router.push("/profile-kasir");

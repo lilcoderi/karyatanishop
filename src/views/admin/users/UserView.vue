@@ -1,93 +1,143 @@
 <template>
   <div class="container">
-    <!-- Tombol Tambah User -->
+    <!-- Header tabel -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>User List</h4>
-      <button
-        class="btn btn-sm btn-success shadow-sm"
-        @click="addNewUser"
-      >
-        <i class="fas fa-plus fa-sm text-white-50"></i> Add New User
-      </button>
     </div>
-
-    <!-- Tabel -->
     <div class="card shadow mb-4">
-      <div class="card-header py-3">
+      <!-- Header dengan Input Pencarian -->
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-success">Table Users</h6>
+        <!-- Input dan Tombol Pencarian -->
+        <div class="input-group" style="max-width: 400px;">
+          <input
+            type="text"
+            class="form-control"
+            v-model="searchQuery"
+            placeholder="Search by name"
+          />
+          <button class="btn btn-success" @click="searchUsers">
+            Search
+          </button>
+        </div>
       </div>
+
+      <!-- Tabel -->
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-bordered table-striped">
-        <thead class="bg-success text-white">
-          <tr>
-            <th>User ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Telephone</th>
-            <th>Photo</th>
-            <th>Verified</th>
-            <th>Role</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in users" :key="user.user_id">
-            <td class="text-truncate" style="max-width: 150px;">{{ user.user_id }}</td>
-            <td class="text-truncate" style="max-width: 150px;">{{ user.nama }}</td>
-            <td class="text-truncate" style="max-width: 150px;">{{ user.email }}</td>
-            <td class="text-truncate" style="max-width: 150px;">{{ user.no_tlp || 'N/A' }}</td>
-            <td class="text-truncate" style="max-width: 150px;">
-              <img :src="user.foto || 'https://via.placeholder.com/50'" alt="User Photo" class="user-photo" />
-            </td>
-            <td class="text-truncate" style="max-width: 150px;">
-              <span :class="user.is_verified ? 'badge bg-success text-white' : 'badge bg-danger text-white'">
-                {{ user.is_verified ? 'Verified' : 'Not Verified' }}
-              </span>
-            </td>
-            <td class="text-truncate" style="max-width: 150px;">
-              <span v-for="(role, index) in user.roles" :key="index">
-                {{ role.name }}
-                <br v-if="index !== user.roles.length - 1">
-              </span>
-            </td>
-            <td>
-              <button @click="viewUser(user.user_id)" class="btn btn-info btn-sm mr-1"><i class="bi bi-eye-fill"></i></button>
-              <button @click="editUser(user.user_id)" class="btn btn-warning btn-sm mr-1"><i class="bi bi-pencil-fill"></i></button>
-              <button @click="deleteUser(user.user_id)" class="btn btn-danger btn-sm mr-1"><i class="bi bi-trash-fill"></i></button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="pagination-controls btn-group">
-    <button 
-      @click="changePage(currentPage - 1)" 
-      :disabled="currentPage === 1" 
-      class="btn btn-success btn-sm">
-      Previous
-    </button>
-    
-    <button
-      v-for="page in totalPages"
-      :key="page"
-      @click="changePage(page)"
-      :class="{'btn btn-success btn-sm': page === currentPage, 'btn-outline-success btn-sm': page !== currentPage}"
-      class="btn">
-      {{ page }}
-    </button>
-    
-    <button 
-      @click="changePage(currentPage + 1)" 
-      :disabled="currentPage === totalPages" 
-      class="btn btn-success btn-sm">
-      Next
-    </button>
-  </div>
+            <thead class="bg-success text-white">
+              <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Telephone</th>
+                <th>Photo</th>
+                <th>Verified</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in users" :key="user.user_id">
+                <td class="text-truncate" style="max-width: 150px;">
+                  {{ user.user_id }}
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  {{ user.nama }}
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  {{ user.email }}
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  {{ user.no_tlp || 'N/A' }}
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  <img
+                    :src="user.foto || 'https://via.placeholder.com/50'"
+                    alt="User Photo"
+                    class="user-photo"
+                  />
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  <span
+                    :class="user.is_verified
+                      ? 'badge bg-success text-white'
+                      : 'badge bg-danger text-white'"
+                  >
+                    {{ user.is_verified ? 'Verified' : 'Not Verified' }}
+                  </span>
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">
+                  <span
+                    v-for="(role, index) in user.roles"
+                    :key="index"
+                  >
+                    {{ role.name }}
+                    <br v-if="index !== user.roles.length - 1" />
+                  </span>
+                </td>
+                <td>
+                  <button
+                    @click="viewUser(user.user_id)"
+                    class="btn btn-info btn-sm mr-1"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    @click="editUser(user.user_id)"
+                    class="btn btn-warning btn-sm mr-1"
+                  >
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  <button
+                    @click="deleteUser(user.user_id)"
+                    class="btn btn-danger btn-sm mr-1"
+                  >
+                    <i class="bi bi-trash-fill"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-controls btn-group">
+          <button
+            @click="changePage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="btn btn-success btn-sm"
+          >
+            Previous
+          </button>
+
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            @click="changePage(page)"
+            :class="{
+              'btn btn-success btn-sm': page === currentPage,
+              'btn-outline-success btn-sm': page !== currentPage,
+            }"
+            class="btn"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            @click="changePage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="btn btn-success btn-sm"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 
 
 <script>

@@ -157,29 +157,23 @@ export default {
       const productId = this.$route.params.id;
       const formData = new FormData();
 
-      // Menambahkan _method sebagai PUT
-      formData.append('_method', 'PUT');
-      
-      // Menambahkan data produk ke FormData
+      formData.append("_method", "PUT");
       Object.keys(this.product).forEach((key) => {
-        if (this.product[key]) {  // Pastikan hanya data yang valid yang dikirim
+        if (this.product[key] !== null && this.product[key] !== "") {
           formData.append(key, this.product[key]);
         }
       });
 
-      // Menambahkan gambar jika ada
       if (this.$refs.gambar.files && this.$refs.gambar.files.length > 0) {
-        const imageFile = this.$refs.gambar.files[0];
-        formData.append("gambar", imageFile);
+        formData.append("gambar", this.$refs.gambar.files[0]);
       }
 
       const token = localStorage.getItem("jwt_token");
 
-      // Mengirimkan POST request dengan _method untuk meniru PUT
       axios
         .post(`http://127.0.0.1:8000/api/products/${productId}`, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",  // Pastikan ini untuk upload file
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         })
@@ -188,13 +182,9 @@ export default {
           this.$router.push("/product-view");
         })
         .catch((error) => {
-          // Menambahkan log error yang lebih rinci
+          console.error("Error updating product:", error);
           if (error.response) {
-            console.error("Error response:", error.response.data);
-            console.error("Error status:", error.response.status);
-            console.error("Error headers:", error.response.headers);
-          } else {
-            console.error("Error message:", error.message);
+            console.error("Error response data:", error.response.data);
           }
         });
     },

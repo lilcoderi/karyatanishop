@@ -9,14 +9,20 @@
     <!-- Topbar Search -->
     <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
       <div class="input-group">
-        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search"
-          aria-describedby="basic-addon2" />
-        <div class="input-group-append">
-          <button class="btn btn-success" type="button">
-            <i class="fas fa-search fa-sm"></i>
-          </button>
-        </div>
-      </div>
+  <input
+    type="text"
+    class="form-control bg-light border-0 small"
+    placeholder="Navigate to a menu by searching..."
+    aria-label="Search"
+    aria-describedby="basic-addon2"
+  />
+  <div class="input-group-append">
+    <button class="btn btn-success" type="button" @click="handleSearch">
+      <i class="fas fa-search fa-sm"></i>
+    </button>
+  </div>
+</div>
+
     </form>
 
     <!-- Topbar Navbar -->
@@ -90,8 +96,9 @@
       <li class="nav-item dropdown no-arrow">
         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false">
-          <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
-          <img class="img-profile rounded-circle" src="/img/undraw_profile.svg" />
+          <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ userName }}</span>
+
+          <img class="img-profile rounded-circle" :src="userPhoto" alt="User Photo" />
         </a>
         <!-- Dropdown - User Information -->
         <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -161,11 +168,13 @@ export default {
       notifications: [],
       message: null,
       messageClass: "",
+      userName: "Guest", // Default nama user
     };
   },
   mounted() {
     this.fetchUnreadCount();
     this.fetchNotifications();
+    this.fetchUserName(); // Ambil nama user saat komponen dimuat
   },
   computed: {
     /**
@@ -192,6 +201,33 @@ export default {
         console.error("Error fetching unread notifications:", error);
       }
     },
+
+    handleSearch() {
+    const searchQuery = document.querySelector(".navbar-search input").value.toLowerCase();
+
+    // Mapping kata kunci ke rute
+    const routeMapping = {
+      product: "/product-view",
+      categories: "/kategori-view",
+      notifications: "/notif-view",
+      promo: "/promo-view",
+      users: "/user-view",
+      roles: "/role-view",
+      orders: "/order-view",
+      reports: "/report-view",
+      transactions: "/transaksi-view",
+    };
+
+    // Cari rute yang sesuai dengan keyword
+    const targetRoute = Object.keys(routeMapping).find((key) => searchQuery.includes(key));
+
+    // Arahkan ke rute yang ditemukan, atau tampilkan pesan error jika tidak ditemukan
+    if (targetRoute) {
+      this.$router.push(routeMapping[targetRoute]);
+    } else {
+      alert("No matching view found for your search.");
+    }
+  },
     async fetchNotifications() {
       try {
         const token = localStorage.getItem("token");
@@ -207,6 +243,32 @@ export default {
         console.error("Error fetching notifications:", error);
         this.message = "Failed to load notifications.";
         this.messageClass = "text-danger";
+      }
+    },
+    async fetchUserName() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://127.0.0.1:8000/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.nama) {
+          this.userName = response.data.nama; // Set nama pengguna dari respons API
+        } else {
+          this.userName = "Guest";
+        }
+
+        if (response.data.foto) {
+          this.userPhoto = `http://127.0.0.1:8000/${response.data.foto}`; // Set foto pengguna dari respons API
+        } else {
+          this.userPhoto = "/img/undraw_profile.svg"; // Default foto jika tidak ada
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        this.userName = "Error";
+        this.userPhoto = "/img/undraw_profile.svg"; // Default foto jika gagal
       }
     },
     async markAsRead(notificationId) {
@@ -281,6 +343,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 /* .badge {

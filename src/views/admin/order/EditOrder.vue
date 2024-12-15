@@ -10,6 +10,7 @@
           class="form-control"
         >
           <option value="pending">Pending</option>
+          <option value="proses">Process</option>
           <option value="selesai">Completed</option>
           <option value="batal">Cancelled</option>
         </select>
@@ -73,39 +74,50 @@ export default {
     },
 
     async updateOrderStatus() {
-      const token = localStorage.getItem("token"); 
-      const orderId = this.$route.params.id; 
+  const token = localStorage.getItem("token");
+  const orderId = this.$route.params.id;
 
-      if (!token) {
-        this.message = "Unauthorized. Please login.";
-        this.messageClass = "error";
-        return;
+  if (!token) {
+    this.message = "Unauthorized. Please login.";
+    this.messageClass = "error";
+    return;
+  }
+
+  console.log("Sending token:", token); // Tambahkan log untuk memeriksa token
+
+  try {
+    const response = await axios.put(
+      `http://127.0.0.1:8000/api/orders/${orderId}`,
+      { status_order: this.orderStatus },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      try {
-        const response = await axios.put(
-          `http://127.0.0.1:8000/api/orders/${orderId}`,
-          { status_order: this.orderStatus },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+    if (response.data.status === "success") {
+      this.message = "Order status updated successfully!";
+      this.messageClass = "success";
+    } else {
+      throw new Error(response.data.message || "Failed to update status.");
+    }
+  } catch (error) {
+    console.error("Error:", error);
 
-        if (response.data.status === "success") {
-          this.message = "Order status updated successfully!";
-          this.messageClass = "success";
-        } else {
-          throw new Error(response.data.message || "Failed to update status.");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        this.message = error.response?.data?.message || error.message;
-        this.messageClass = "error";
-      }
-    },
+    // Cek apakah ada response error dari server
+    if (error.response) {
+      console.log("Error response:", error.response); // Tambahkan log untuk mengecek respons
+      this.message = error.response?.data?.message || "Unauthorized or Invalid request.";
+    } else {
+      this.message = "Network or server error.";
+    }
+    
+    this.messageClass = "error";
+  }
+},
+
 
     goBack() {
       this.$router.push("/order-view");

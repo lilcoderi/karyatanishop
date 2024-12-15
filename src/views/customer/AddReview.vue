@@ -23,6 +23,18 @@
             />
           </div>
 
+          <!-- Order ID -->
+          <div class="mb-3">
+            <label for="order_id" class="form-label fw-semibold">Order ID</label>
+            <input
+              type="text"
+              id="order_id"
+              v-model="order_id"
+              class="form-control bg-light"
+              readonly
+            />
+          </div>
+
           <!-- Konten Review -->
           <div class="mb-3">
             <label for="content" class="form-label fw-semibold">Konten</label>
@@ -73,7 +85,6 @@
   </div>
 </template>
 
-
 <script>
 import NavbarView from "@/components/NavbarView.vue";
 import axios from "axios";
@@ -81,15 +92,17 @@ import axios from "axios";
 export default {
   data() {
     return {
-      produk_id: this.$route.params.produkId, // Mengambil produk_id dari route params
+      // Mengambil produk_id dan order_id dari query parameter
+      produk_id: this.$route.query.produk_id || '', // Mengambil produk_id dari query string
+      order_id: this.$route.query.order_id || '', // Mengambil order_id dari query string
       content: "",  // Konten review
       rating: 0,    // Rating review (1-5)
       error: null,  // Pesan error
       success: null, // Pesan sukses
     };
   },
-  components:{
-    NavbarView
+  components: {
+    NavbarView,
   },
   methods: {
     // Mengubah rating saat bintang diklik
@@ -121,6 +134,7 @@ export default {
             produk_id: this.produk_id,
             content: this.content,
             rating: this.rating,
+            order_id: this.order_id, // Menambahkan order_id
           },
           {
             headers: {
@@ -185,5 +199,4 @@ textarea {
 .btn {
   border-radius: 25px;
 }
-
 </style>

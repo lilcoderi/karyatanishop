@@ -58,9 +58,10 @@
                 <small>{{ address.kota || 'Not provided' }}</small>
               </div>
               <div class="d-flex justify-content-between align-items-center">
-                <small class="font-weight-bold">Provinsi</small>
-                <small>{{ address.provinsi || 'Not provided' }}</small>
-              </div>
+  <small class="font-weight-bold">Provinsi</small>
+  <small>{{ address.provinsi || 'Not provided' }}</small>
+</div>
+
               <div class="d-flex justify-content-between align-items-center">
                 <small class="font-weight-bold">Kecamatan</small>
                 <small>{{ address.kecamatan || 'Not provided' }}</small>
@@ -155,18 +156,37 @@ export default {
       }
     },
     async getUserAddress() {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/address", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        this.address = response.data;
-      } catch (error) {
-        console.error("Error fetching address:", error);
-        alert("Failed to load address data.");
-      }
-    },
+  try {
+    const [addressResponse, provincesResponse] = await Promise.all([
+      axios.get("http://127.0.0.1:8000/api/address", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }),
+      axios.get("http://127.0.0.1:8000/api/provinces"),
+    ]);
+
+    const addressData = addressResponse.data;
+    const provincesData = provincesResponse.data;
+
+    // Debugging: Log API responses
+    console.log("Address Data:", addressData);
+    console.log("Provinces Data:", provincesData);
+
+    // Konversi tipe data ke integer untuk memastikan kesesuaian
+    const province = provincesData.find(prov => parseInt(prov.id) === parseInt(addressData.provinsi));
+
+    this.address = {
+      ...addressData,
+      provinsi: province ? province.text : `Province with ID ${addressData.provinsi} not found`,
+    };
+  } catch (error) {
+    console.error("Error fetching address or provinces:", error);
+    alert("Failed to load address or province data.");
+  }
+},
+
+
     editProfile() {
       this.$router.push("/profile-customer-edit");
     },

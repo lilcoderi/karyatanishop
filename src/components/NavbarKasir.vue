@@ -46,11 +46,13 @@
           <div class="dropdown no-arrow">
             <a type="button" class="dropdown-toggle ml-4 text-decoration-none" data-toggle="dropdown">
               <img
-          src="/img/undraw_profile.svg"
-          alt="User"
-          class="rounded-circle "
-          style="width: 25px; height: 25px;"
-        /> <small>{{ user.nama }}</small>  
+  :src="user.foto ? `http://127.0.0.1:8000/${user.foto}` : '/img/undraw_profile.svg'"
+  alt="User"
+  class="rounded-circle"
+  style="width: 25px; height: 25px;"
+/>
+<small>{{ user.nama }}</small>
+
             </a>
             <div class="dropdown-menu no-arrow">
               <router-link to="/profile-kasir" class="dropdown-item">
@@ -137,19 +139,26 @@ export default {
       }
     },
     async getUserProfile() {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/profile", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        console.log("User profile data fetched:", response.data);
-        this.user = response.data;
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        alert("Failed to load profile data.");
-      }
-    },
+  try {
+    const response = await axios.get("http://127.0.0.1:8000/api/profile", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    console.log("User profile data fetched:", response.data);
+
+    // Pastikan data user termasuk foto diperoleh dari respons API
+    this.user = {
+      user_id: response.data.user_id,
+      nama: response.data.nama,
+      foto: response.data.foto, // Pastikan properti 'foto' ada
+    };
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    alert("Failed to load profile data.");
+  }
+},
+
     onSearch() {
       // Emit event ke parent dengan searchQuery
       this.$emit("search", this.searchQuery);

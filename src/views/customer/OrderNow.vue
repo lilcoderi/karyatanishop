@@ -51,14 +51,13 @@
                 v-model="voucherCode"
                 class="form-control"
                 placeholder="Masukkan Kode Voucher"
-                @change="applyVoucher"
               />
             </div>
 
             <!-- Shipping Method Selection -->
             <div class="shipping-method mb-3">
               <h6>Metode Pengiriman</h6>
-             <!-- <div class="form-check">
+              <!-- <div class="form-check">
                 <input
                   type="radio"
                   id="jtr"
@@ -99,14 +98,14 @@
             <div class="btn-container text-center mt-3 btn-group">
               <button
                 class="btn btn-success"
-                :disabled="cartItems.length === 0 || !selectedCourier"
+                :disabled="!selectedCourier"
                 @click="checkoutOrder"
               >
                 Checkout
               </button>
               <button
                 class="btn btn-secondary"
-                @click="$router.push('/cart-view')"
+                @click="$router.push('/product-detail/' + productId)"
               >
                 Back
               </button>
@@ -126,6 +125,7 @@ export default {
   components: {
     NavbarView,
   },
+
   data() {
     return {
       cartItems: [],
@@ -133,23 +133,36 @@ export default {
       loading: true,
       error: null,
       discount: 0,
-      selectedCourier: "", // Selected courier (JTR or REG)
-      deliveryFee: 0, // Delivery fee based on the selected courier
-      destination: null, // Province destination (to calculate shipping)
-      totalWeight: 0, // Total weight of selected products
+      selectedCourier: "",
+      deliveryFee: 0,
+      productId: this.$route.params.productId, // Correctly fetch productId from route params
+      quantity: 1, // Default quantity is 1
+      totalWeight: 0,
+      destination: null, // To store destination
     };
   },
+
   computed: {
     totalPrice() {
+      // Calculate total price including delivery fee and discount
       const total = this.cartItems.reduce(
         (total, item) => total + parseFloat(item.subtotal),
         0
       );
-      return total - this.discount + this.deliveryFee; // Include delivery fee in total
+      return total - this.discount + this.deliveryFee;
     },
   },
+
   methods: {
-    async fetchCartItems() {
+    formatPrice(amount) {
+      // Format the price to currency (Indonesian Rupiah)
+      return amount.toLocaleString("id-ID", {
+        style: "currency",
+        currency: "IDR",
+      });
+    },
+
+    async fetchProduct() {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -157,10 +170,8 @@ export default {
           return;
         }
 
-        const selectedItemIds =
-          JSON.parse(this.$route.query.selectedItems) || [];
         const response = await axios.get(
-          "http://127.0.0.1:8000/api/cart",
+          `http://127.0.0.1:8000/api/products/${this.productId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -169,18 +180,22 @@ export default {
         );
 
         if (response.data) {
-          this.cartItems = response.data.filter((item) =>
-            selectedItemIds.includes(item.item_keranjang_id)
-          );
-        } else {
-          this.error = "Keranjang kosong atau tidak valid.";
+          this.cartItems = [{
+            produk: response.data,
+            kuantitas: this.quantity,
+            harga_satuan: response.data.harga_satuan,
+            subtotal: response.data.harga_satuan * this.quantity
+          }];
         }
       } catch (err) {
-        this.error =
-          err.response?.data?.message || "Gagal memuat keranjang belanja.";
+        this.error = err.response?.data?.message || "Produk tidak ditemukan.";
       } finally {
         this.loading = false;
       }
+    },
+
+    getImageUrl(imagePath) {
+      return `http://127.0.0.1:8000/${imagePath}`;
     },
 
     async fetchDestination() {
@@ -207,18 +222,6 @@ export default {
       }
     },
 
-    formatPrice(price) {
-      return parseFloat(price).toLocaleString("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        minimumFractionDigits: 0,
-      });
-    },
-
-    getImageUrl(imagePath) {
-      return `http://127.0.0.1:8000/${imagePath}`;
-    },
-
     async fetchDeliveryFee() {
       if (!this.selectedCourier || !this.destination) {
         this.error = "Kurir atau tujuan tidak dipilih.";
@@ -232,7 +235,7 @@ export default {
           origin: "35",
           destination: this.destination,
           weight: this.totalWeight,
-          courier: "jne", // Kirim fixed courier ke backend
+          courier: "jne",
         });
 
         const courierInfo = response.data.find(
@@ -245,10 +248,6 @@ export default {
         }
 
         this.deliveryFee = courierInfo.cost[0]?.value || 0;
-
-        if (this.deliveryFee === 0) {
-          this.error = `Tidak ada ongkir tersedia untuk layanan ${this.selectedCourier}.`;
-        }
       } catch (err) {
         this.error = "Gagal mendapatkan ongkir.";
       }
@@ -263,72 +262,50 @@ export default {
       }, 0);
     },
 
-    async applyVoucher() {
-      if (this.voucherCode) {
-        try {
-          const response = await axios.post('http://127.0.0.1:8000/api/check-voucher', {
-            kode_voucher: this.voucherCode,
-          });
-
-          if (response.data.status === 'success') {
-            this.discount = response.data.data.discount_value; // Misalnya, diskon yang diterima
-          } else {
-            this.discount = 0;
-            this.error = response.data.message;
-          }
-        } catch (err) {
-          this.error = "Gagal menerapkan voucher.";
-        }
-      } else {
-        this.discount = 0;
-      }
-    },
-
     async checkoutOrder() {
-      try {
-        if (this.deliveryFee === 0) {
-          this.error = "Ongkir belum dihitung.";
-          return;
-        }
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      this.error = "Anda harus login terlebih dahulu.";
+      return;
+    }
 
-        const token = localStorage.getItem("token");
-        if (!token) {
-          this.error = "Anda harus login terlebih dahulu.";
-          return;
-        }
-
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/orders",
-          {
-            item_keranjang_id: this.cartItems.map((item) => item.item_keranjang_id),
-            kode_voucher: this.voucherCode,
-            ongkir: this.deliveryFee, // Perbaikan: kirim ongkir di sini
-            total_price: this.totalPrice, // Total price sudah dihitung (termasuk ongkir dan diskon)
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.data.status === "success") {
-          alert(response.data.message);
-          window.location.href = `http://127.0.0.1:8000/pay/${response.data.data.order.order_id}`;
-        } else {
-          this.error = response.data.message || "Checkout gagal.";
-        }
-      } catch (err) {
-        this.error = err.response?.data?.message || "Checkout gagal.";
+    // Mengirimkan ongkir bersama dengan data lainnya
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/order-now",
+      {
+        produk_id: this.productId,
+        quantity: this.quantity,
+        kode_voucher: this.voucherCode,
+        ongkir: this.deliveryFee, // Mengirim ongkir ke backend
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    },
+    );
+
+    if (response.data.status === "success") {
+      alert(response.data.message);
+      window.location.href = `http://127.0.0.1:8000/pay/${response.data.data.order.order_id}`;
+    } else {
+      this.error = response.data.message || "Checkout gagal.";
+    }
+  } catch (err) {
+    this.error = err.response?.data?.message || "Checkout gagal.";
+  }
+},
+
   },
+
   mounted() {
-    this.fetchCartItems();
+    this.fetchProduct();
     this.fetchDestination();
   },
 };
 </script>
+
 
 <style scoped>
 /* General container setup */

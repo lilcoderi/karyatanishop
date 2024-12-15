@@ -9,8 +9,14 @@
         {{ product.nama_produk }}
       </h6>
       <p class="card-text">
-        {{ formatPrice(product.after_diskon || product.harga) }}
-      </p>
+  <span v-if="product.promo_id" style="text-decoration: line-through; color: red; margin-right: 8px;">
+    {{ formatPrice(product.harga_satuan) }}
+  </span>
+  <span>
+    {{ formatPrice(product.after_diskon || product.harga_satuan) }}
+  </span>
+</p>
+
 
       <!-- Average Rating -->
       <div v-if="isValidRating(averageRating)" class="average-rating">

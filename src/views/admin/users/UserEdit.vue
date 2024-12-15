@@ -146,43 +146,60 @@ export default {
     },
 
     async submitForm() {
-      const userData = {
-        nama: this.user.name,
-        email: this.user.email,
-        password: this.user.password.trim(),
-        roles: this.user.roles, 
-      };
+  // Validasi frontend
+  if (!this.user.name || !this.user.email || !Array.isArray(this.user.roles)) {
+    alert("Harap isi semua data yang diperlukan.");
+    return;
+  }
 
-      const token = localStorage.getItem("token");
+  // Siapkan data
+  const userData = {
+    nama: this.user.name,
+    email: this.user.email,
+    password: this.user.password.trim() || undefined, // Hanya kirim password jika diisi
+    roles: this.user.roles,
+  };
 
-      if (!token) {
-        alert("No token found. Please log in.");
-        return;
+  console.log("Data yang dikirim:", userData); // Debug
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("No token found. Please log in.");
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `http://127.0.0.1:8000/api/users/${this.user.user_id}`,
+      userData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      try {
-        const response = await axios.put(
-          `http://127.0.0.1:8000/api/users/${this.user.user_id}`,
-          userData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+    if (response.data.success) {
+      alert("User updated successfully!");
+      this.$router.push({ name: "user-view" });
+    } else {
+      alert("Failed to update user: " + response.data.error);
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 422) {
+      console.error("Validation error:", error.response.data.errors);
+      alert(
+        `Validation Error: ${JSON.stringify(error.response.data.errors)}`
+      );
+    } else {
+      console.error("Error updating user:", error);
+      alert("Error updating user.");
+    }
+  }
+},
 
-        if (response.data.success) {
-          alert("User updated successfully!");
-          this.$router.push({ name: "user-view" }); 
-        } else {
-          alert("Failed to update user: " + response.data.error);
-        }
-      } catch (error) {
-        console.error("Error updating user:", error);
-        alert("Error updating user.");
-      }
-    },
 
     cancel() {
       this.$router.push({ name: "user-view" }); 

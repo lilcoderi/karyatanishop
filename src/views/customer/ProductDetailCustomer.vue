@@ -57,12 +57,22 @@
           </div>
 
           <!-- Harga -->
-          <h4 class="text-second">
-            {{ formatCurrency(product.harga_satuan) }}
-            <small v-if="product.harga_diskon" class="text-muted text-decoration-line-through ms-2">
-              {{ formatCurrency(product.harga_diskon) }}
-            </small>
-          </h4>
+          <!-- Harga -->
+<h4 class="text-second">
+  <span v-if="product.promo_id">
+    <small class="text-muted" style="text-decoration: line-through; color: red;  margin-right: 0.5rem;">
+      {{ formatCurrency(product.harga_satuan) }}
+    </small>
+    {{ formatCurrency(product.after_diskon) }}
+  </span>
+  <span v-else>
+    {{ formatCurrency(product.harga_satuan) }}
+  </span>
+</h4>
+
+
+  
+
 
           <!-- Deskripsi singkat -->
           <p class="mt-3 text-capitalize">{{ product.deskripsi_produk }}</p>
@@ -151,8 +161,9 @@
             </div>
             <div v-else class="review-list">
               <div v-for="review in reviews" :key="review.id_review" class="review-item d-flex align-items-start mb-4">
-                <img :src="getUserProfileImage(review.user ? review.user.foto : '')" alt="Foto Profil"
-                  class="profile-img rounded-circle me-3" />
+                <img :src="getUserProfileImage(review.user ? review.user.foto : '')" alt="Foto Profil" 
+  class="profile-img rounded-circle me-3" />
+
                 <div class="review-content">
                   <p class="mb-1">
                     <strong>{{ getUserName(review.user) }}</strong>
@@ -236,6 +247,11 @@ export default {
         this.loading = false;
       }
     },
+
+    orderNow() {
+    // Navigasi ke halaman checkout dengan membawa ID produk
+    this.$router.push({ name: 'order-now', params: { productId: this.produk_id } });
+  },
     async fetchProductReviews() {
       try {
         const token = this.getToken();
@@ -272,37 +288,40 @@ export default {
       }
     },
     async addToCart() {
-      try {
-        this.addToCartLoading = true; // Mulai loading state
-        const token = this.getToken();
-        if (!token) {
-          alert("Anda harus login terlebih dahulu.");
-          return;
-        }
+  try {
+    this.addToCartLoading = true; // Mulai loading state
+    const token = this.getToken();
+    if (!token) {
+      alert("Anda harus login terlebih dahulu.");
+      return;
+    }
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/cart/add",
-          {
-            produk_id: this.produk_id,
-            kuantitas: this.quantity,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        if (response.data.success) {
-          alert("Produk berhasil ditambahkan ke keranjang!");
-        } else {
-          alert("Gagal menambahkan produk ke keranjang.");
-        }
-      } catch (error) {
-        console.error("Terjadi kesalahan:", error);
-        alert("Terjadi kesalahan saat menambahkan produk ke keranjang.");
-      } finally {
-        this.addToCartLoading = false; // Akhiri loading state
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/cart/add",
+      {
+        produk_id: this.produk_id,
+        kuantitas: this.quantity,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
       }
-    },
+    );
+
+    // Periksa respons berdasarkan message, bukan success
+    if (response.data.message === "Produk berhasil ditambahkan ke keranjang.") {
+      alert("Produk berhasil ditambahkan ke keranjang!");
+    } else {
+      console.log("Respons API: ", response.data); // Tambahkan logging untuk respons API
+      alert("Gagal menambahkan produk ke keranjang.");
+    }
+  } catch (error) {
+    console.error("Terjadi kesalahan:", error);
+    alert("Terjadi kesalahan saat menambahkan produk ke keranjang.");
+  } finally {
+    this.addToCartLoading = false; // Akhiri loading state
+  }
+},
+
     getImageUrl() {
       return this.product ? `http://127.0.0.1:8000/${this.product.gambar}` : "";
     },
@@ -369,4 +388,13 @@ export default {
 .text-second {
     color: #7ABC18;
 }
+
+.profile-img {
+  width: 40px; /* Ubah ukuran gambar sesuai kebutuhan */
+  height: 40px; /* Pastikan aspek rasio tetap */
+  object-fit: cover; /* Agar gambar tidak terdistorsi */
+  margin-right: 10px; /* Menambahkan jarak ke kanan */
+}
+
+
 </style>

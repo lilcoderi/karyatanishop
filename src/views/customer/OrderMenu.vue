@@ -6,20 +6,16 @@
     <!-- Menu untuk memilih status order -->
     <div class="container mt-4">
       <div class="btn-group w-100 mb-4" role="group" aria-label="Order Status">
-        <button class="btn btn-outline-success" :class="{ active: activeTab === 'pending' }"
-          @click="setActiveTab('pending')">
+        <button class="btn btn-outline-success" :class="{ active: activeTab === 'pending' }" @click="setActiveTab('pending')">
           Pending
         </button>
-        <button class="btn btn-outline-success" :class="{ active: activeTab === 'proses' }"
-          @click="setActiveTab('proses')">
+        <button class="btn btn-outline-success" :class="{ active: activeTab === 'proses' }" @click="setActiveTab('proses')">
           Proses
         </button>
-        <button class="btn btn-outline-success" :class="{ active: activeTab === 'selesai' }"
-          @click="setActiveTab('selesai')">
+        <button class="btn btn-outline-success" :class="{ active: activeTab === 'selesai' }" @click="setActiveTab('selesai')">
           Selesai
         </button>
-        <button class="btn btn-outline-success" :class="{ active: activeTab === 'batal' }"
-          @click="setActiveTab('batal')">
+        <button class="btn btn-outline-success" :class="{ active: activeTab === 'batal' }" @click="setActiveTab('batal')">
           Batal
         </button>
       </div>
@@ -46,29 +42,38 @@
               <div class="d-flex justify-content-between align-items-center">
                 <div class="text-left">
                   <h6 class="card-title">Order #{{ order.order_id }}</h6>
-                  <span class="badge" :class="getStatusClass(order.status_order)">{{ order.status_order.toUpperCase()
-                    }}</span>
+                  <span class="badge" :class="getStatusClass(order.status_order)">{{ order.status_order.toUpperCase() }}</span>
                 </div>
                 <div>
                   <button class="btn btn-outline-info btn-sm mb-2" @click="viewOrderDetails(order.order_id)">
                     <i class="bi bi-eye"></i> Lihat Detail
                   </button>
-                  <button v-if="order.status_order === 'selesai' && !order.id_review"
-                    class="btn btn-outline-success btn-sm ms-2" @click="handleReview(order)">
-                    <i class="bi bi-star"></i> Add Review
-                  </button>
 
-                  <button v-if="order.status_order === 'selesai' && order.id_review"
-                    class="btn btn-outline-secondary btn-sm ms-2" @click="handleReview(order)">
-                    <i class="bi bi-pencil"></i> Edit Review
-                  </button>
+                  <!-- Tombol untuk Add Review -->
+<button 
+  v-if="order.status_order === 'selesai' && !order.hasReview" 
+  class="btn btn-outline-success btn-sm ms-2" 
+  @click="handleAddReview(order)"
+>
+  <i class="bi bi-star"></i> Add Review
+</button>
+
+<!-- Tombol untuk Edit Review -->
+<button 
+  v-if="order.status_order === 'selesai' && order.hasReview" 
+  class="btn btn-outline-secondary btn-sm ms-2" 
+  @click="handleEditReview(order)"
+>
+  <i class="bi bi-pencil"></i> Edit Review
+</button>
+
+
                 </div>
               </div>
               <hr />
               <!-- Produk items -->
               <div v-for="item in order.produk_items" :key="item.produk_item_id" class="d-flex align-items-center mb-3">
-                <img :src="`http://127.0.0.1:8000/${item.produk.gambar}`" class="rounded" alt="product image"
-                  style="width: 80px; height: 80px; object-fit: cover;" />
+                <img :src="`http://127.0.0.1:8000/${item.produk.gambar}`" class="rounded" alt="product image" style="width: 80px; height: 80px; object-fit: cover;" />
                 <div class="ms-3 ml-3 text-left">
                   <h6 class="mb-1">
                     {{ item.produk.nama_produk || "Nama Produk Tidak Tersedia" }}
@@ -132,9 +137,7 @@ export default {
   },
   computed: {
     filteredOrders() {
-      return this.orders.filter(
-        (order) => order.status_order === this.activeTab
-      );
+      return this.orders.filter((order) => order.status_order === this.activeTab);
     },
   },
   methods: {
@@ -152,25 +155,43 @@ export default {
           return "bg-secondary";
       }
     },
-    async handleReview(order) {
-      const produkId = order.produk_items[0]?.produk?.produk_id;
+    async handleAddReview(order) {
+    const produkId = order.produk_items[0]?.produk?.produk_id; // Ambil ID produk (jika ada)
+    const orderId = order.order_id; // Ambil ID pesanan
 
-      if (produkId) {
-        try {
-          // Redirect ke halaman Add/Edit Review
-          await this.$router.push(`/add-review/${produkId}`);
-
-          // Setelah review berhasil, perbarui id_review untuk order ini
-          this.$nextTick(() => {
-            order.id_review = true; // Anggap review berhasil dan id_review diperbarui
-          });
-        } catch (error) {
-          console.error("Gagal memperbarui review:", error);
-        }
-      } else {
-        console.warn("Produk tidak ditemukan pada order:", order);
+    if (produkId && orderId) {
+      try {
+        // Redirect ke halaman Add Review
+        await this.$router.push({
+          path: '/add-review',
+          query: { order_id: orderId, produk_id: produkId },
+        });
+      } catch (error) {
+        console.error("Gagal mengarahkan ke halaman Add Review:", error);
       }
-    },
+    } else {
+      console.warn("Data order_id atau produk_id tidak ditemukan untuk Add Review:", { orderId, produkId });
+    }
+  },
+
+  async handleEditReview(order) {
+  const orderId = order.order_id; // Ambil order_id
+
+  if (orderId) {
+    try {
+      // Redirect ke halaman Edit Review dengan order_id sebagai parameter
+      await this.$router.push({
+        path: '/edit-review',
+        query: { order_id: orderId },
+      });
+    } catch (error) {
+      console.error("Gagal mengarahkan ke halaman Edit Review:", error);
+    }
+  } else {
+    console.warn("Order ID tidak ditemukan untuk Edit Review:", orderId);
+  }
+},
+
     async fetchOrders() {
       try {
         const token = localStorage.getItem("token");
@@ -181,7 +202,7 @@ export default {
         }
 
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/orders?page=${this.currentPage}`,
+          `http://127.0.0.1:8000/api/orders-user?page=${this.currentPage}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -190,7 +211,32 @@ export default {
         );
 
         if (response.data.status === "success" && response.data.data) {
-          this.orders = response.data.data.data;
+          this.orders = await Promise.all(
+            response.data.data.data.map(async (order) => {
+              try {
+                const reviewResponse = await axios.get(
+                  `http://127.0.0.1:8000/api/review/order?order_id=${order.order_id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                // Periksa apakah ada review dalam response
+                if (reviewResponse.data && reviewResponse.data.data) {
+                  console.log(`Review ditemukan untuk order ${order.order_id}`); // Debugging
+                  order.hasReview = true;
+                } else {
+                  console.log(`Tidak ada review untuk order ${order.order_id}`); // Debugging
+                  order.hasReview = true;
+                }
+              } catch (err) {
+                order.hasReview = false; // Jika ada error, anggap tidak ada review
+              }
+              return order;
+            })
+          );
           this.totalPages = response.data.data.last_page;
           this.loading = false;
         } else {

@@ -129,8 +129,11 @@ export default {
         });
     },
     getImageUrl(imageName) {
-      return `http://127.0.0.1:8000/${imageName}`;
-    },
+  const url = `http://127.0.0.1:8000/${imageName}`;
+  console.log("Generated Image URL:", url);
+  return url;
+},
+
     addProduct() {
       this.$router.push("/product-add");
     },
